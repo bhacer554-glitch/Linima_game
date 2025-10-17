@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ферма Зверят - Уход и Фермерство</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #6ecbf5 0%, #059669 100%);
+            min-height: 100vh;
+            padding: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .save-indicator {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .save-indicator.show {
+            opacity: 1;
+        }
+
+        .tabs {
+            display: flex;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-bottom: 3px solid #3730a3;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-right: 1px solid rgba(255,255,255,0.2);
+            user-select: none;
+        }
+
+        .tab:last-child {
+            border-right: none;
+        }
+
+        .tab.active {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 15px;
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .stat {
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .stat-bar {
+            height: 16px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .stat-fill {
+            height: 100%;
+            border-radius: 8px;
+            transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+        }
+
+        .stat-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .pet-area {
+            background: linear-gradient(135deg, #dbeafe 0%, #f0f9ff 100%);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            margin: 15px;
+            box-shadow: inset 0 0 20px rgba(59, 130, 246, 0.1);
+        }
+
+        .pet-display-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 20px;
+        }
+
+        .pet-display {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 70px;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pet-display.happy {
+            animation: bounce 0.8s ease;
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .pet-display.sad {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            transform: scale(0.95);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .pet-effects {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .effect {
+            position: absolute;
+            font-size: 20px;
+            opacity: 0;
+            animation: floatUp 1.5s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            20% { opacity: 1; }
+            100% { transform: translateY(-60px) scale(1.2); opacity: 0; }
+        }
+
+        .farm-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+            padding: 0 10px;
+        }
+
+        .farm-plot {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #a7f3d0, #6ee7b7);
+            border: 3px solid #059669;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(5, 150, 105, 0.2);
+            user-select: none;
+        }
+
+        .farm-plot.ready {
+            background: linear-gradient(135deg, #fde68a, #fbbf24);
+            border-color: #d97706;
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 5px 15px rgba(251, 191, 36, 0.3); }
+            50% { box-shadow: 0 5px 25px rgba(251, 191, 36, 0.6); }
+        }
+
+        .crop-progress {
+            position: absolute;
+            bottom: 5px;
+            left: 10px;
+            right: 10px;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .crop-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+            padding: 0 10px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            border: none;
+            padding: 16px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 6px 12px rgba(99, 102, 241, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            min-height: 70px;
+            user-select: none;
+        }
+
+        .action-btn i {
+            font-size: 20px;
+        }
+
+        .action-btn:active {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .action-btn:disabled {
+            background: #9ca3af;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .shop-items {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .shop-item {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .shop-item i {
+            font-size: 32px;
+            margin-bottom: 8px;
+            color: #6366f1;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .inventory-item {
+            background: white;
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            user-select: none;
+        }
+
+        .inventory-item.active {
+            border-color: #6366f1;
+            background: #f0f9ff;
+        }
+
+        .inventory-item i {
+            font-size: 24px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+            transform: translateX(400px);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .resource-bar {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 16px;
+            margin: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .resource {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .resource i {
+            font-size: 20px;
+            color: #6366f1;
+        }
+
+        .save-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px;
+            flex-wrap: wrap;
+        }
+
+        .save-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn.reset {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .planting-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .planting-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 300px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .seed-option {
+            background: linear-gradient(135deg, #a7f3d0, #6ee7b7);
+            border: none;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        /* Адаптивность для iOS */
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .actions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .farm-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .shop-items {
+                grid-template-columns: 1fr;
+            }
+            
+            .pet-display-container {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .pet-display {
+                font-size: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="save-indicator" id="save-indicator">Сохранено!</div>
+
+    <div class="planting-modal" id="planting-modal">
+        <div class="modal-content">
+            <h3>Выберите семена для посадки</h3>
+            <button class="seed-option" onclick="plantSelected('wheat')">
+                <i class="fas fa-seedling"></i> Пшеница (30 сек)
+            </button>
+            <button class="seed-option" onclick="plantSelected('carrot')">
+                <i class="fas fa-carrot"></i> Морковь (60 сек)
+            </button>
+            <button class="action-btn" onclick="closePlantingModal()" style="margin-top: 15px;">
+                Отмена
+            </button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="resource-bar">
+            <div class="resource">
+                <i class="fas fa-coins"></i>
+                <span id="gold">100</span>
+            </div>
+            <div class="resource">
+                <i class="fas fa-star"></i>
+                <span id="exp">0</span>
+            </div>
+            <div class="resource">
+                <i class="fas fa-trophy"></i>
+                <span id="level">1</span>
+            </div>
+            <div class="resource">
+                <i class="fas fa-seedling"></i>
+                <span id="seeds">5</span>
+            </div>
+        </div>
+
+        <div class="save-controls">
+            <button class="save-btn" onclick="manualSave()">
+                <i class="fas fa-save"></i> Сохранить игру
+            </button>
+            <button class="save-btn reset" onclick="resetGame()">
+                <i class="fas fa-trash"></i> Новая игра
+            </button>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('pet')">Питомец</div>
+            <div class="tab" onclick="switchTab('farm')">Ферма</div>
+            <div class="tab" onclick="switchTab('shop')">Магазин</div>
+            <div class="tab" onclick="switchTab('inventory')">Инвентарь</div>
+        </div>
+
+        <!-- Вкладка питомца -->
+        <div id="pet-tab" class="tab-content active">
+            <div class="pet-area">
+                <div class="pet-display-container">
+                    <div class="pet-display" id="pet-display">
+                        🐥
+                    </div>
+                    <div class="pet-effects" id="pet-effects"></div>
+                </div>
+                <div class="pet-mood" id="pet-mood">Отлично себя чувствую! 😊</div>
+                
+                <div class="actions-grid">
+                    <button class="action-btn" onclick="performAction('feed')">
+                        <i class="fas fa-apple-alt"></i>
+                        <span>Покормить</span>
+                    </button>
+                    <button class="action-btn" onclick="performAction('drink')">
+                        <i class="fas fa-tint"></i>
+                        <span>Напоить</span>
+                    </button>
+                    <button class="action-btn" onclick="performAction('play')">
+                        <i class="fas fa-gamepad"></i>
+                        <span>Играть</span>
+                    </button>
+                    <button class="action-btn" onclick="performAction('clean')">
+                        <i class="fas fa-bath"></i>
+                        <span>Почистить</span>
+                    </button>
+                    <button class="action-btn" onclick="performAction('sleep')">
+                        <i class="fas fa-bed"></i>
+                        <span>Спать</span>
+                    </button>
+                    <button class="action-btn" onclick="performAction('train')">
+                        <i class="fas fa-dumbbell"></i>
+                        <span>Тренировать</span>
+                    </button>
+                    <button class="action-btn" onclick="performAction('heal')">
+                        <i class="fas fa-heart"></i>
+                        <span>Лечить</span>
+                    </button>
+                    <button class="action-btn" onclick="performAction('special')">
+                        <i class="fas fa-magic"></i>
+                        <span>Особое</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="stats-container">
+                <div class="stat">
+                    <div class="stat-header">
+                        <span>🍎 Голод</span>
+                        <span id="hunger-text">100%</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-fill" id="hunger-bar" style="width: 100%; background: linear-gradient(90deg, #ef4444, #f97316);"></div>
+                    </div>
+                </div>
+                <div class="stat">
+                    <div class="stat-header">
+                        <span>💧 Жажда</span>
+                        <span id="thirst-text">100%</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-fill" id="thirst-bar" style="width: 100%; background: linear-gradient(90deg, #3b82f6, #06b6d4);"></div>
+                    </div>
+                </div>
+                <div class="stat">
+                    <div class="stat-header">
+                        <span>😊 Счастье</span>
+                        <span id="happiness-text">100%</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-fill" id="happiness-bar" style="width: 100%; background: linear-gradient(90deg, #f59e0b, #eab308);"></div>
+                    </div>
+                </div>
+                <div class="stat">
+                    <div class="stat-header">
+                        <span>💤 Энергия</span>
+                        <span id="energy-text">100%</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-fill" id="energy-bar" style="width: 100%; background: linear-gradient(90deg, #8b5cf6, #a855f7);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка фермы -->
+        <div id="farm-tab" class="tab-content">
+            <div style="text-align: center; margin: 20px 0;">
+                <h3>🌱 Ваша ферма</h3>
+                <p style="color: #64748b; margin-top: 5px;">Сажайте растения и собирайте урожай!</p>
+            </div>
+            
+            <div class="farm-grid" id="farm-grid">
+                <!-- Грядки будут созданы через JavaScript -->
+            </div>
+            
+            <div style="text-align: center; margin: 20px;">
+                <button class="action-btn" onclick="buyFarmPlot()" style="display: inline-flex; padding: 12px 24px;">
+                    <i class="fas fa-plus"></i>
+                    <span>Купить грядку (50💰)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Вкладка магазина -->
+        <div id="shop-tab" class="tab-content">
+            <div style="text-align: center; margin: 20px 0;">
+                <h3>🛍️ Магазин</h3>
+            </div>
+            
+            <div class="shop-items">
+                <div class="shop-item">
+                    <i class="fas fa-seedling"></i>
+                    <h4>Семена пшеницы</h4>
+                    <p>Вырастает за 30 секунд</p>
+                    <button class="action-btn" onclick="buyItem('wheat')" style="margin-top: 10px; padding: 10px;">
+                        Купить за 10💰
+                    </button>
+                </div>
+                <div class="shop-item">
+                    <i class="fas fa-carrot"></i>
+                    <h4>Семена моркови</h4>
+                    <p>Вырастает за 60 секунд</p>
+                    <button class="action-btn" onclick="buyItem('carrot')" style="margin-top: 10px; padding: 10px;">
+                        Купить за 20💰
+                    </button>
+                </div>
+                <div class="shop-item">
+                    <i class="fas fa-apple-alt"></i>
+                    <h4>Яблоко</h4>
+                    <p>+20 к голоду</p>
+                    <button class="action-btn" onclick="buyItem('apple')" style="margin-top: 10px; padding: 10px;">
+                        Купить за 15💰
+                    </button>
+                </div>
+                <div class="shop-item">
+                    <i class="fas fa-cookie"></i>
+                    <h4>Печенье</h4>
+                    <p>+30 к счастью</p>
+                    <button class="action-btn" onclick="buyItem('cookie')" style="margin-top: 10px; padding: 10px;">
+                        Купить за 25💰
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка инвентаря -->
+        <div id="inventory-tab" class="tab-content">
+            <div style="text-align: center; margin: 20px 0;">
+                <h3>🎒 Инвентарь</h3>
+            </div>
+            
+            <div class="inventory-grid" id="inventory-grid">
+                <!-- Предметы инвентаря будут созданы через JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        Добро пожаловать на ферму зверят! 🌟
+    </div>
+
+    <script>
+        class VirtualPetFarm {
+            constructor() {
+                this.stats = {
+                    hunger: 100,
+                    thirst: 100,
+                    happiness: 100,
+                    energy: 100,
+                    health: 100
+                };
+                this.level = 1;
+                this.exp = 0;
+                this.gold = 100;
+                this.seeds = {
+                    wheat: 3,
+                    carrot: 2
+                };
+                this.evolutionStage = 0;
+                this.evolutionStages = ['🐥 Детёныш', '🐔 Подросток', '🦚 Взрослый', '🐉 Элитный', '🦄 Легендарный'];
+                this.inventory = {
+                    apple: 2,
+                    cookie: 1,
+                    wheat: 0,
+                    carrot: 0
+                };
+                this.farmPlots = [];
+                this.maxPlots = 6;
+                this.mood = 'Отлично себя чувствую! 😊';
+                this.lastActionTime = Date.now();
+                this.gameStartTime = Date.now();
+                this.lastSaveTime = 0;
+                this.currentPlotForPlanting = null;
+                
+                this.initFarm();
+            }
+
+            initFarm() {
+                // Создаем начальные грядки
+                for (let i = 0; i < 3; i++) {
+                    this.farmPlots.push({
+                        id: i,
+                        planted: null,
+                        plantTime: null,
+                        growthTime: null,
+                        progress: 0,
+                        ready: false
+                    });
+                }
+            }
+
+            // Метод для сохранения игры
+            saveGame() {
+                try {
+                    const saveData = {
+                        stats: this.stats,
+                        level: this.level,
+                        exp: this.exp,
+                        gold: this.gold,
+                        seeds: this.seeds,
+                        evolutionStage: this.evolutionStage,
+                        inventory: this.inventory,
+                        farmPlots: this.farmPlots,
+                        mood: this.mood,
+                        lastActionTime: this.lastActionTime,
+                        gameStartTime: this.gameStartTime,
+                        saveTime: Date.now(),
+                        gameVersion: '1.1'
+                    };
+
+                    localStorage.setItem('virtualPetFarmSave', JSON.stringify(saveData));
+                    return true;
+                } catch (e) {
+                    console.error('Ошибка сохранения:', e);
+                    return false;
+                }
+            }
+
+            // Метод для загрузки игры
+            loadGame() {
+                try {
+                    const saveData = localStorage.getItem('virtualPetFarmSave');
+                    if (!saveData) return false;
+
+                    const loadedData = JSON.parse(saveData);
+                    
+                    // Проверяем версию сохранения и мигрируем при необходимости
+                    if (!loadedData.gameVersion || loadedData.gameVersion === '1.0') {
+                        // Миграция с версии 1.0 на 1.1
+                        if (loadedData.seeds && typeof loadedData.seeds === 'number') {
+                            loadedData.seeds = {
+                                wheat: loadedData.seeds,
+                                carrot: 0
+                            };
+                        }
+                    }
+
+                    // Восстанавливаем данные с проверками
+                    this.stats = loadedData.stats || this.stats;
+                    this.level = loadedData.level || 1;
+                    this.exp = loadedData.exp || 0;
+                    this.gold = loadedData.gold || 100;
+                    this.seeds = loadedData.seeds || { wheat: 3, carrot: 2 };
+                    this.evolutionStage = loadedData.evolutionStage || 0;
+                    this.inventory = loadedData.inventory || { apple: 2, cookie: 1, wheat: 0, carrot: 0 };
+                    this.farmPlots = loadedData.farmPlots || [];
+                    this.mood = loadedData.mood || 'Отлично себя чувствую! 😊';
+                    this.lastActionTime = loadedData.lastActionTime || Date.now();
+                    this.gameStartTime = loadedData.gameStartTime || Date.now();
+
+                    // Восстанавливаем прогресс фермы
+                    if (this.farmPlots.length === 0) {
+                        this.initFarm();
+                    }
+
+                    // Обновляем прогресс фермы после загрузки
+                    this.updateFarmProgress();
+
+                    return true;
+                } catch (e) {
+                    console.error('Ошибка загрузки:', e);
+                    return false;
+                }
+            }
+
+            // Обновление прогресса фермы после загрузки
+            updateFarmProgress() {
+                const now = Date.now();
+                this.farmPlots.forEach(plot => {
+                    if (plot.planted && plot.plantTime && !plot.ready) {
+                        const growthElapsed = (now - plot.plantTime) / 1000;
+                        plot.progress = Math.min(100, (growthElapsed / plot.growthTime) * 100);
+                        
+                        if (plot.progress >= 100) {
+                            plot.ready = true;
+                        }
+                    }
+                });
+            }
+
+            // Метод для сброса игры
+            resetGame() {
+                try {
+                    localStorage.removeItem('virtualPetFarmSave');
+                    return true;
+                } catch (e) {
+                    console.error('Ошибка сброса:', e);
+                    return false;
+                }
+            }
+
+            updateStats() {
+                const now = Date.now();
+                const timeDiff = (now - this.lastActionTime) / 1000 / 60; // минуты
+                
+                // Уменьшение статов со временем с проверкой на минимальное значение
+                this.stats.hunger = Math.max(0, this.stats.hunger - timeDiff * 0.3);
+                this.stats.thirst = Math.max(0, this.stats.thirst - timeDiff * 0.4);
+                this.stats.happiness = Math.max(0, this.stats.happiness - timeDiff * 0.2);
+                this.stats.energy = Math.max(0, this.stats.energy - timeDiff * 0.15);
+
+                this.updateMood();
+                this.updateFarm();
+                this.lastActionTime = now;
+                
+                // Авто-сохранение при изменении статов
+                this.autoSave();
+            }
+
+            updateMood() {
+                const avgStat = (this.stats.hunger + this.stats.thirst + this.stats.happiness + this.stats.energy) / 4;
+                
+                if (avgStat >= 80) this.mood = 'Отлично себя чувствую! 😊';
+                else if (avgStat >= 60) this.mood = 'Всё хорошо! 🙂';
+                else if (avgStat >= 40) this.mood = 'Могло быть и лучше 😐';
+                else if (avgStat >= 20) this.mood = 'Плохо... 😞';
+                else this.mood = 'Очень плохо! Нужна помощь! 😨';
+
+                // Визуальное отображение настроения
+                const petDisplay = document.getElementById('pet-display');
+                if (!petDisplay) return;
+                
+                if (avgStat >= 60) {
+                    petDisplay.classList.add('happy');
+                    petDisplay.classList.remove('sad');
+                } else {
+                    petDisplay.classList.add('sad');
+                    petDisplay.classList.remove('happy');
+                }
+            }
+
+            updateFarm() {
+                const now = Date.now();
+                let needsUpdate = false;
+                
+                this.farmPlots.forEach(plot => {
+                    if (plot.planted && plot.plantTime && !plot.ready) {
+                        const growthElapsed = (now - plot.plantTime) / 1000;
+                        const newProgress = Math.min(100, (growthElapsed / plot.growthTime) * 100);
+                        
+                        if (Math.abs(newProgress - plot.progress) > 1) {
+                            plot.progress = newProgress;
+                            needsUpdate = true;
+                        }
+                        
+                        if (plot.progress >= 100 && !plot.ready) {
+                            plot.ready = true;
+                            this.showNotification(`🌱 Урожай готов к сбору!`);
+                            this.autoSave();
+                            needsUpdate = true;
+                        }
+                    }
+                });
+                
+                return needsUpdate;
+            }
+
+            addExp(amount) {
+                this.exp += amount;
+                const expNeeded = this.level * 100;
+                if (this.exp >= expNeeded) {
+                    this.levelUp();
+                    // Переносим оставшийся опыт на следующий уровень
+                    this.exp = this.exp - expNeeded;
+                }
+                this.autoSave();
+            }
+
+            levelUp() {
+                this.level++;
+                this.gold += this.level * 50;
+                this.showNotification(`🎉 Уровень UP! Теперь уровень ${this.level}!`);
+                
+                // Эволюция каждые 5 уровней
+                if (this.level % 5 === 0 && this.evolutionStage < this.evolutionStages.length - 1) {
+                    this.evolutionStage++;
+                    this.showNotification(`🌟 Эволюция! Теперь ваш питомец: ${this.evolutionStages[this.evolutionStage]}`);
+                }
+                
+                this.autoSave();
+            }
+
+            showNotification(message) {
+                const notification = document.getElementById('notification');
+                if (!notification) return;
+                
+                notification.textContent = message;
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+
+            showSaveIndicator() {
+                const indicator = document.getElementById('save-indicator');
+                if (!indicator) return;
+                
+                indicator.classList.add('show');
+                
+                setTimeout(() => {
+                    indicator.classList.remove('show');
+                }, 2000);
+            }
+
+            createEffect(emoji) {
+                const effectsContainer = document.getElementById('pet-effects');
+                if (!effectsContainer) return;
+                
+                const effect = document.createElement('div');
+                effect.className = 'effect';
+                effect.textContent = emoji;
+                effect.style.left = Math.random() * 80 + 10 + '%';
+                effectsContainer.appendChild(effect);
+                
+                setTimeout(() => {
+                    if (effectsContainer.contains(effect)) {
+                        effectsContainer.removeChild(effect);
+                    }
+                }, 1500);
+            }
+
+            plantSeed(plotId, seedType) {
+                // Проверяем корректность plotId
+                if (plotId < 0 || plotId >= this.farmPlots.length) {
+                    this.showNotification('Ошибка: неверный идентификатор грядки');
+                    return false;
+                }
+
+                if (!this.seeds[seedType] || this.seeds[seedType] <= 0) {
+                    this.showNotification('Недостаточно семян!');
+                    return false;
+                }
+
+                const plot = this.farmPlots[plotId];
+                if (!plot) {
+                    this.showNotification('Грядка не найдена!');
+                    return false;
+                }
+
+                if (plot.planted) {
+                    this.showNotification('На этой грядке уже что-то растет!');
+                    return false;
+                }
+
+                this.seeds[seedType]--;
+                plot.planted = seedType;
+                plot.plantTime = Date.now();
+                plot.ready = false;
+                
+                // Установка времени роста в зависимости от типа семян
+                if (seedType === 'wheat') {
+                    plot.growthTime = 30; // 30 секунд
+                } else if (seedType === 'carrot') {
+                    plot.growthTime = 60; // 60 секунд
+                } else {
+                    this.showNotification('Неизвестный тип семян!');
+                    return false;
+                }
+
+                this.showNotification(`🌱 Посажены ${seedType === 'wheat' ? 'семена пшеницы' : 'семена моркови'}!`);
+                this.autoSave();
+                return true;
+            }
+
+            harvestPlot(plotId) {
+                // Проверяем корректность plotId
+                if (plotId < 0 || plotId >= this.farmPlots.length) {
+                    this.showNotification('Ошибка: неверный идентификатор грядки');
+                    return false;
+                }
+
+                const plot = this.farmPlots[plotId];
+                if (!plot) {
+                    this.showNotification('Грядка не найдена!');
+                    return false;
+                }
+
+                if (!plot.ready) {
+                    this.showNotification('Урожай еще не созрел!');
+                    return false;
+                }
+
+                let harvestItem;
+                let goldEarned = 0;
+                
+                if (plot.planted === 'wheat') {
+                    harvestItem = 'wheat';
+                    goldEarned = 25;
+                } else if (plot.planted === 'carrot') {
+                    harvestItem = 'carrot';
+                    goldEarned = 40;
+                } else {
+                    this.showNotification('Неизвестный тип растения!');
+                    return false;
+                }
+
+                this.inventory[harvestItem] = (this.inventory[harvestItem] || 0) + 1;
+                this.gold += goldEarned;
+                
+                // Сбрасываем грядку
+                plot.planted = null;
+                plot.plantTime = null;
+                plot.ready = false;
+                plot.progress = 0;
+                plot.growthTime = null;
+
+                this.showNotification(`🎉 Собран урожай! +${goldEarned}💰`);
+                this.addExp(15);
+                this.autoSave();
+                return true;
+            }
+
+            useItem(item) {
+                if (!this.inventory[item] || this.inventory[item] <= 0) {
+                    this.showNotification('Предмет не найден в инвентаре!');
+                    return false;
+                }
+
+                this.inventory[item]--;
+                
+                switch(item) {
+                    case 'apple':
+                        this.stats.hunger = Math.min(100, this.stats.hunger + 20);
+                        this.createEffect('🍎');
+                        break;
+                    case 'cookie':
+                        this.stats.happiness = Math.min(100, this.stats.happiness + 30);
+                        this.createEffect('🍪');
+                        break;
+                    case 'wheat':
+                        this.stats.hunger = Math.min(100, this.stats.hunger + 15);
+                        this.createEffect('🌾');
+                        break;
+                    case 'carrot':
+                        this.stats.hunger = Math.min(100, this.stats.hunger + 25);
+                        this.createEffect('🥕');
+                        break;
+                    default:
+                        this.showNotification('Неизвестный предмет!');
+                        return false;
+                }
+                
+                this.showNotification(`Использован ${this.getItemEmoji(item)}`);
+                this.autoSave();
+                return true;
+            }
+
+            getItemEmoji(item) {
+                const emojis = {
+                    'apple': '🍎',
+                    'cookie': '🍪',
+                    'wheat': '🌾',
+                    'carrot': '🥕'
+                };
+                return emojis[item] || '📦';
+            }
+
+            buyFarmPlot() {
+                if (this.farmPlots.length >= this.maxPlots) {
+                    this.showNotification('Достигнут максимум грядок!');
+                    return;
+                }
+                
+                if (this.gold >= 50) {
+                    this.gold -= 50;
+                    this.farmPlots.push({
+                        id: this.farmPlots.length,
+                        planted: null,
+                        plantTime: null,
+                        growthTime: null,
+                        progress: 0,
+                        ready: false
+                    });
+                    this.showNotification('Приобретена новая грядка!');
+                    this.autoSave();
+                    renderFarm();
+                } else {
+                    this.showNotification('Недостаточно золота!');
+                }
+            }
+
+            // Авто-сохранение с защитой от слишком частых сохранений
+            autoSave() {
+                if (!this.lastSaveTime || Date.now() - this.lastSaveTime > 5000) {
+                    if (this.saveGame()) {
+                        this.lastSaveTime = Date.now();
+                    }
+                }
+            }
+
+            // Проверка доступности семян для посадки
+            getAvailableSeeds() {
+                const available = [];
+                if (this.seeds.wheat > 0) available.push('wheat');
+                if (this.seeds.carrot > 0) available.push('carrot');
+                return available;
+            }
+        }
+
+        // Глобальные переменные
+        let game = null;
+        let currentPlotForPlanting = null;
+
+        // Глобальные функции для управления сохранениями
+        function manualSave() {
+            if (game && game.saveGame()) {
+                game.showSaveIndicator();
+                game.showNotification('Игра сохранена! 💾');
+            } else {
+                game.showNotification('Ошибка сохранения! ❌');
+            }
+        }
+
+        function resetGame() {
+            if (confirm('Вы уверены, что хотите начать новую игру? Весь прогресс будет потерян!')) {
+                if (game && game.resetGame()) {
+                    location.reload();
+                }
+            }
+        }
+
+        // Функции для взаимодействия с UI
+        function switchTab(tabName) {
+            // Скрыть все вкладки
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Показать выбранную вкладку
+            const tabElement = document.getElementById(`${tabName}-tab`);
+            if (tabElement) {
+                tabElement.classList.add('active');
+            }
+            
+            // Найти и активировать соответствующую вкладку
+            const tabs = document.querySelectorAll('.tab');
+            for (let tab of tabs) {
+                if (tab.textContent.trim() === 
+                    (tabName === 'pet' ? 'Питомец' : 
+                     tabName === 'farm' ? 'Ферма' : 
+                     tabName === 'shop' ? 'Магазин' : 'Инвентарь')) {
+                    tab.classList.add('active');
+                    break;
+                }
+            }
+        }
+
+        function performAction(action) {
+            if (!game) return;
+            
+            // Проверяем, что статы в допустимых пределах
+            const validateStats = () => {
+                game.stats.hunger = Math.max(0, Math.min(100, game.stats.hunger));
+                game.stats.thirst = Math.max(0, Math.min(100, game.stats.thirst));
+                game.stats.happiness = Math.max(0, Math.min(100, game.stats.happiness));
+                game.stats.energy = Math.max(0, Math.min(100, game.stats.energy));
+            };
+            
+            switch(action) {
+                case 'feed':
+                    if (game.stats.hunger >= 100) {
+                        game.showNotification('Питомец не голоден!');
+                        return;
+                    }
+                    game.stats.hunger = Math.min(100, game.stats.hunger + 15);
+                    game.stats.happiness = Math.min(100, game.stats.happiness + 5);
+                    game.addExp(10);
+                    game.createEffect('🍎');
+                    break;
+                    
+                case 'drink':
+                    if (game.stats.thirst >= 100) {
+                        game.showNotification('Питомец не хочет пить!');
+                        return;
+                    }
+                    game.stats.thirst = Math.min(100, game.stats.thirst + 20);
+                    game.addExp(5);
+                    game.createEffect('💧');
+                    break;
+                    
+                case 'play':
+                    if (game.stats.energy < 20) {
+                        game.showNotification('Питомец слишком устал для игр!');
+                        return;
+                    }
+                    game.stats.happiness = Math.min(100, game.stats.happiness + 20);
+                    game.stats.energy = Math.max(0, game.stats.energy - 15);
+                    game.stats.hunger = Math.max(0, game.stats.hunger - 10);
+                    game.addExp(15);
+                    game.createEffect('🎮');
+                    break;
+                    
+                case 'clean':
+                    game.stats.happiness = Math.min(100, game.stats.happiness + 10);
+                    game.addExp(8);
+                    game.createEffect('✨');
+                    break;
+                    
+                case 'sleep':
+                    if (game.stats.energy >= 80) {
+                        game.showNotification('Питомец не хочет спать!');
+                        return;
+                    }
+                    game.stats.energy = 100;
+                    game.stats.hunger = Math.max(0, game.stats.hunger - 20);
+                    game.stats.thirst = Math.max(0, game.stats.thirst - 20);
+                    game.addExp(20);
+                    game.createEffect('💤');
+                    break;
+                    
+                case 'train':
+                    if (game.stats.energy < 30) {
+                        game.showNotification('Недостаточно энергии для тренировки!');
+                        return;
+                    }
+                    game.stats.energy = Math.max(0, game.stats.energy - 25);
+                    game.stats.hunger = Math.max(0, game.stats.hunger - 15);
+                    game.stats.thirst = Math.max(0, game.stats.thirst - 15);
+                    game.addExp(25);
+                    game.createEffect('💪');
+                    break;
+                    
+                case 'heal':
+                    if (game.stats.health >= 100) {
+                        game.showNotification('Питомец полностью здоров!');
+                        return;
+                    }
+                    if (game.gold < 20) {
+                        game.showNotification('Недостаточно золота для лечения!');
+                        return;
+                    }
+                    game.stats.health = 100;
+                    game.stats.happiness = Math.min(100, game.stats.happiness + 10);
+                    game.gold -= 20;
+                    game.createEffect('❤️');
+                    break;
+                    
+                case 'special':
+                    if (game.level < 3) {
+                        game.showNotification('Нужен 3 уровень для особых действий!');
+                        return;
+                    }
+                    if (game.gold < 50) {
+                        game.showNotification('Нужно 50 золота для особого действия!');
+                        return;
+                    }
+                    game.gold -= 50;
+                    game.stats.happiness = Math.min(100, game.stats.happiness + 30);
+                    game.stats.energy = Math.min(100, game.stats.energy + 20);
+                    game.addExp(50);
+                    game.createEffect('✨');
+                    break;
+            }
+            
+            validateStats();
+            updateUI();
+        }
+
+        function buyItem(item) {
+            if (!game) return;
+            
+            const prices = {
+                'wheat': 10,
+                'carrot': 20,
+                'apple': 15,
+                'cookie': 25
+            };
+
+            const price = prices[item];
+            if (price === undefined) {
+                game.showNotification('Неизвестный предмет!');
+                return;
+            }
+
+            if (game.gold >= price) {
+                game.gold -= price;
+                
+                if (item === 'wheat' || item === 'carrot') {
+                    game.seeds[item] = (game.seeds[item] || 0) + 1;
+                } else {
+                    game.inventory[item] = (game.inventory[item] || 0) + 1;
+                }
+                
+                updateUI();
+                game.showNotification(`Куплен ${game.getItemEmoji(item)}`);
+                game.autoSave();
+            } else {
+                game.showNotification('Недостаточно золота!');
+            }
+        }
+
+        function openPlantingModal(plotId) {
+            if (!game) return;
+            
+            const availableSeeds = game.getAvailableSeeds();
+            if (availableSeeds.length === 0) {
+                game.showNotification('Нет семян для посадки!');
+                return;
+            }
+            
+            currentPlotForPlanting = plotId;
+            const modal = document.getElementById('planting-modal');
+            if (modal) {
+                modal.classList.add('active');
+            }
+        }
+
+        function closePlantingModal() {
+            const modal = document.getElementById('planting-modal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            currentPlotForPlanting = null;
+        }
+
+        function plantSelected(seedType) {
+            if (!game || currentPlotForPlanting === null) return;
+            
+            if (game.plantSeed(currentPlotForPlanting, seedType)) {
+                renderFarm();
+                updateUI();
+            }
+            closePlantingModal();
+        }
+
+        function renderFarm() {
+            if (!game) return;
+            
+            const farmGrid = document.getElementById('farm-grid');
+            if (!farmGrid) return;
+            
+            farmGrid.innerHTML = '';
+            
+            game.farmPlots.forEach((plot, index) => {
+                const plotEl = document.createElement('div');
+                plotEl.className = 'farm-plot';
+                
+                if (plot.ready) {
+                    plotEl.classList.add('ready');
+                    plotEl.innerHTML = `
+                        ${plot.planted === 'wheat' ? '🌾' : '🥕'}
+                        <div class="crop-progress">
+                            <div class="crop-progress-fill" style="width: 100%"></div>
+                        </div>
+                    `;
+                    plotEl.onclick = () => harvestPlot(index);
+                } else if (plot.planted) {
+                    plotEl.innerHTML = `
+                        ${plot.planted === 'wheat' ? '🌱' : '🌿'}
+                        <div class="crop-progress">
+                            <div class="crop-progress-fill" style="width: ${plot.progress}%"></div>
+                        </div>
+                    `;
+                } else {
+                    plotEl.innerHTML = '🪴';
+                    plotEl.onclick = () => openPlantingModal(index);
+                }
+                
+                farmGrid.appendChild(plotEl);
+            });
+        }
+
+        function harvestPlot(plotId) {
+            if (!game) return;
+            
+            if (game.harvestPlot(plotId)) {
+                renderFarm();
+                updateUI();
+            }
+        }
+
+        function renderInventory() {
+            if (!game) return;
+            
+            const inventoryGrid = document.getElementById('inventory-grid');
+            if (!inventoryGrid) return;
+            
+            inventoryGrid.innerHTML = '';
+            
+            // Отображаем семена
+            Object.entries(game.seeds).forEach(([seedType, count]) => {
+                if (count > 0) {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'inventory-item';
+                    itemEl.innerHTML = `
+                        <i>${seedType === 'wheat' ? '🌾' : '🥕'}</i>
+                        <div>${count}</div>
+                        <small>${seedType === 'wheat' ? 'Семена пшеницы' : 'Семена моркови'}</small>
+                    `;
+                    inventoryGrid.appendChild(itemEl);
+                }
+            });
+            
+            // Отображаем предметы
+            Object.entries(game.inventory).forEach(([item, count]) => {
+                if (count > 0) {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'inventory-item';
+                    itemEl.innerHTML = `
+                        <i>${game.getItemEmoji(item)}</i>
+                        <div>${count}</div>
+                        <small>${item === 'apple' ? 'Яблоко' : 
+                                item === 'cookie' ? 'Печенье' : 
+                                item === 'wheat' ? 'Пшеница' : 'Морковь'}</small>
+                    `;
+                    itemEl.onclick = () => {
+                        if (game.useItem(item)) {
+                            updateUI();
+                        }
+                    };
+                    inventoryGrid.appendChild(itemEl);
+                }
+            });
+        }
+
+        function updateUI() {
+            if (!game) return;
+            
+            // Обновляем статы
+            const hungerBar = document.getElementById('hunger-bar');
+            const thirstBar = document.getElementById('thirst-bar');
+            const happinessBar = document.getElementById('happiness-bar');
+            const energyBar = document.getElementById('energy-bar');
+            
+            if (hungerBar) hungerBar.style.width = `${game.stats.hunger}%`;
+            if (thirstBar) thirstBar.style.width = `${game.stats.thirst}%`;
+            if (happinessBar) happinessBar.style.width = `${game.stats.happiness}%`;
+            if (energyBar) energyBar.style.width = `${game.stats.energy}%`;
+
+            const hungerText = document.getElementById('hunger-text');
+            const thirstText = document.getElementById('thirst-text');
+            const happinessText = document.getElementById('happiness-text');
+            const energyText = document.getElementById('energy-text');
+            
+            if (hungerText) hungerText.textContent = `${Math.round(game.stats.hunger)}%`;
+            if (thirstText) thirstText.textContent = `${Math.round(game.stats.thirst)}%`;
+            if (happinessText) happinessText.textContent = `${Math.round(game.stats.happiness)}%`;
+            if (energyText) energyText.textContent = `${Math.round(game.stats.energy)}%`;
+
+            // Обновляем ресурсы
+            const goldEl = document.getElementById('gold');
+            const expEl = document.getElementById('exp');
+            const levelEl = document.getElementById('level');
+            const seedsEl = document.getElementById('seeds');
+            
+            if (goldEl) goldEl.textContent = game.gold;
+            if (expEl) expEl.textContent = game.exp;
+            if (levelEl) levelEl.textContent = game.level;
+            
+            // Обновляем количество семян (суммируем все типы)
+            if (seedsEl) {
+                const totalSeeds = (game.seeds.wheat || 0) + (game.seeds.carrot || 0);
+                seedsEl.textContent = totalSeeds;
+            }
+
+            // Обновляем настроение и внешний вид
+            const petMood = document.getElementById('pet-mood');
+            if (petMood) petMood.textContent = game.mood;
+            
+            // Обновляем эволюцию
+            const petDisplay = document.getElementById('pet-display');
+            if (petDisplay) {
+                const emojis = ['🐥', '🐔', '🦚', '🐉', '🦄'];
+                petDisplay.textContent = emojis[game.evolutionStage];
+            }
+        }
+
+        // Инициализация игры
+        function initGame() {
+            game = new VirtualPetFarm();
+            
+            // Пытаемся загрузить сохранение
+            const loaded = game.loadGame();
+            if (loaded) {
+                game.showNotification('Игра загружена! 🎮');
+            } else {
+                game.showNotification('Добро пожаловать на ферму зверят! 🌟');
+            }
+            
+            updateUI();
+            renderFarm();
+            renderInventory();
+            
+            // Сохраняем начальное состояние
+            game.saveGame();
+        }
+
+        // Запускаем игру при загрузке страницы
+        window.addEventListener('load', initGame);
+
+        // Авто-обновление статов и фермы
+        setInterval(() => {
+            if (game) {
+                game.updateStats();
+                const needsFarmUpdate = game.updateFarm();
+                updateUI();
+                if (needsFarmUpdate) {
+                    renderFarm();
+                }
+            }
+        }, 2000); // Обновление каждые 2 секунды
+
+        // Авто-сохранение каждые 30 секунд
+        setInterval(() => {
+            if (game) {
+                game.autoSave();
+            }
+        }, 30000);
+
+        // Сохраняем при закрытии страницы
+        window.addEventListener('beforeunload', () => {
+            if (game) {
+                game.saveGame();
+            }
+        });
+
+        // Предотвращение масштабирования на iOS при двойном тапе
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        });
+
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        // Предотвращение контекстного меню на мобильных устройствах
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html>
